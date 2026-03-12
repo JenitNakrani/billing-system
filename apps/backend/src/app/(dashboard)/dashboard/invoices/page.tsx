@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "~/trpc/react";
 import { format } from "date-fns";
@@ -10,14 +9,9 @@ import { format } from "date-fns";
 type StatusFilter = "all" | "unpaid" | "partial" | "paid";
 
 export default function InvoicesListPage() {
-  const searchParams = useSearchParams();
   const trpc = useTRPC();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [overdueOnly, setOverdueOnly] = useState(false);
-
-  useEffect(() => {
-    if (searchParams.get("overdue") === "1") setOverdueOnly(true);
-  }, [searchParams]);
   const { data, isLoading } = useQuery(
     trpc.invoices.list.queryOptions({
       limit: 50,
