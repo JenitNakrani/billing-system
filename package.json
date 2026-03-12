@@ -1,0 +1,31 @@
+{
+  "name": "billing-system",
+  "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev --continue",
+    "dev:backend": "turbo run dev -F @billing-system/backend",
+    "lint": "turbo run lint --continue",
+    "typecheck": "turbo run typecheck --continue",
+    "test": "turbo run test --continue",
+    "clean": "turbo run clean",
+    "db:generate": "pnpm -F @billing-system/db run db:generate",
+    "db:push": "pnpm -F @billing-system/db run db:push",
+    "db:studio": "pnpm -F @billing-system/db run db:studio"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.1",
+    "typescript": "^5.8.3"
+  },
+  "packageManager": "pnpm@10.6.3",
+  "pnpm": {
+    "overrides": {
+      "next": "15.4.10"
+    }
+  },
+  "engines": {
+    "node": ">=22.14.0",
+    "pnpm": ">=9.6.0"
+  }
+}
+

@@ -1,0 +1,39 @@
+{
+  "name": "@billing-system/api",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./src/index.ts"
+    },
+    "./env": "./env.ts"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc",
+    "clean": "git clean -xdf .cache .turbo dist node_modules",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit --emitDeclarationOnly false",
+    "with-env": "dotenv -e ../../.env --"
+  },
+  "dependencies": {
+    "@billing-system/db": "workspace:*",
+    "@trpc/server": "catalog:",
+    "drizzle-orm": "^0.43.1",
+    "bcryptjs": "catalog:",
+    "jose": "catalog:",
+    "zod": "catalog:",
+    "superjson": "catalog:",
+    "date-fns": "^4.1.0",
+    "@t3-oss/env-core": "^0.13.2"
+  },
+  "devDependencies": {
+    "@billing-system/tsconfig": "workspace:*",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^22.15.3",
+    "typescript": "catalog:"
+  }
+}

@@ -1,0 +1,5 @@
+# Database (PostgreSQL). Used by @billing-system/db and backend.
+DATABASE_URL="postgresql://user:password@localhost:5432/billing_system"
+
+# Secret for signing session JWT. Use a long random string in production.
+AUTH_SECRET="dev-secret-change-in-production"

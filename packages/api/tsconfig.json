@@ -1,0 +1,11 @@
+{
+  "extends": "@billing-system/tsconfig/internal-package.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "rootDir": "src",
+    "outDir": "dist",
+    "types": ["node"]
+  },
+  "include": ["src", "env.ts"],
+  "exclude": ["node_modules"]
+}
