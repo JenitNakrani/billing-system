@@ -2,7 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { eq, and, desc, or, like, lt } from "drizzle-orm";
 import { customer as customerTable } from "@billing-system/db";
-import { createTRPCRouter, protectedProcedure, subscriptionProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure, subscriptionProcedure, adminProcedure } from "../trpc";
 
 export const customersRouter = createTRPCRouter({
   list: protectedProcedure
@@ -99,7 +99,7 @@ export const customersRouter = createTRPCRouter({
       return updated!;
     }),
 
-  delete: subscriptionProcedure.input(z.object({ id: z.string() })).mutation(async ({ ctx, input }) => {
+  delete: adminProcedure.input(z.object({ id: z.string() })).mutation(async ({ ctx, input }) => {
     await ctx.db
       .delete(customerTable)
       .where(and(eq(customerTable.id, input.id), eq(customerTable.companyId, ctx.user.companyId)));

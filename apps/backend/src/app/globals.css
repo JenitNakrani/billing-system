@@ -5,3 +5,29 @@
 body {
   @apply bg-gray-50 text-gray-900 antialiased;
 }
+
+/* Invoice print view: hide everything except the invoice content when printing */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  body.invoice-print * {
+    visibility: hidden;
+  }
+  body.invoice-print .invoice-print-content,
+  body.invoice-print .invoice-print-content * {
+    visibility: visible;
+  }
+  body.invoice-print .no-print {
+    display: none !important;
+    visibility: hidden !important;
+  }
+  body.invoice-print .invoice-print-content {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-width: 100%;
+    padding: 0;
+  }
+}

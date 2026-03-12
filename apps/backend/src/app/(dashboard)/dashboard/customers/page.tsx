@@ -112,6 +112,7 @@ export default function CustomersPage() {
   };
 
   const canEdit = user?.subscriptionActive ?? false;
+  const isAdmin = user?.role === "admin";
 
   return (
     <div className="space-y-6">
@@ -228,16 +229,18 @@ export default function CustomersPage() {
                           >
                             Edit
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (confirm("Delete this customer?"))
-                                deleteMutation.mutate({ id: c.id });
-                            }}
-                            className="ml-3 text-red-600 hover:underline"
-                          >
-                            Delete
-                          </button>
+                          {isAdmin && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (confirm("Delete this customer? This cannot be undone."))
+                                  deleteMutation.mutate({ id: c.id });
+                              }}
+                              className="ml-3 text-red-600 hover:underline"
+                            >
+                              Delete
+                            </button>
+                          )}
                         </td>
                       )}
                     </motion.tr>

@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "~/trpc/react";
 import { format } from "date-fns";
 
 export default function InvoiceDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const id = params.id as string;
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -40,6 +41,14 @@ export default function InvoiceDetailPage() {
       },
     }),
   });
+  const duplicateMutation = useMutation({
+    ...trpc.invoices.duplicate.mutationOptions({
+      onSuccess: (data) => {
+        void queryClient.invalidateQueries({ queryKey: trpc.invoices.pathKey() });
+        router.push(`/dashboard/invoices/${data.id}`);
+      },
+    }),
+  });
 
   const canEdit = user?.subscriptionActive ?? false;
   const totalAmount = invoice ? Number(invoice.totalAmount) : 0;
@@ -48,6 +57,11 @@ export default function InvoiceDetailPage() {
     0,
   ) ?? 0;
   const balance = totalAmount - paidAmount;
+  const dueDate = invoice?.dueDate ? new Date(invoice.dueDate) : null;
+  const isOverdue =
+    dueDate &&
+    balance > 0 &&
+    dueDate < new Date(new Date().setHours(0, 0, 0, 0));
 
   if (isLoading || !id) {
     return (
@@ -112,23 +126,50 @@ export default function InvoiceDetailPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="flex items-center justify-between gap-4">
-        <Link
-          href="/dashboard/invoices"
-          className="text-sm text-slate-600 hover:text-slate-900 hover:underline"
-        >
-          ← Invoices
-        </Link>
-        <span
-          className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
-            invoice.status === "paid"
-              ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100"
-              : invoice.status === "partial"
-                ? "bg-amber-50 text-amber-700 ring-1 ring-amber-100"
-                : "bg-slate-50 text-slate-700 ring-1 ring-slate-200"
-          }`}
-        >
-          {invoice.status}
-        </span>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/dashboard/invoices"
+            className="text-sm text-slate-600 hover:text-slate-900 hover:underline"
+          >
+            ← Invoices
+          </Link>
+          <Link
+            href={`/dashboard/invoices/${id}/print`}
+            // target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+          >
+            Print / PDF
+          </Link>
+          {canEdit && (
+            <button
+              type="button"
+              onClick={() => duplicateMutation.mutate({ id })}
+              disabled={duplicateMutation.isPending}
+              className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+            >
+              {duplicateMutation.isPending ? "Duplicating…" : "Duplicate"}
+            </button>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <span
+            className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
+              invoice.status === "paid"
+                ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100"
+                : invoice.status === "partial"
+                  ? "bg-amber-50 text-amber-700 ring-1 ring-amber-100"
+                  : "bg-slate-50 text-slate-700 ring-1 ring-slate-200"
+            }`}
+          >
+            {invoice.status}
+          </span>
+          {isOverdue && (
+            <span className="inline-flex rounded-full bg-red-50 px-3 py-1 text-xs font-medium text-red-700 ring-1 ring-red-200">
+              Overdue
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -140,6 +181,11 @@ export default function InvoiceDetailPage() {
             <p className="text-sm text-slate-600">
               Date: {format(new Date(invoice.invoiceDate), "dd MMM yyyy")}
             </p>
+            {dueDate && (
+              <p className="text-sm text-slate-600">
+                Due: {format(dueDate, "dd MMM yyyy")}
+              </p>
+            )}
           </div>
           <div className="text-right">
             <p className="text-sm text-slate-500">Customer</p>

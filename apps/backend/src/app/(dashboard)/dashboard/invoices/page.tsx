@@ -1,15 +1,40 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "~/trpc/react";
 import { format } from "date-fns";
 
+type StatusFilter = "all" | "unpaid" | "partial" | "paid";
+
 export default function InvoicesListPage() {
+  const searchParams = useSearchParams();
   const trpc = useTRPC();
-  const { data, isLoading } = useQuery(trpc.invoices.list.queryOptions({ limit: 50 }));
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [overdueOnly, setOverdueOnly] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get("overdue") === "1") setOverdueOnly(true);
+  }, [searchParams]);
+  const { data, isLoading } = useQuery(
+    trpc.invoices.list.queryOptions({
+      limit: 50,
+      status: statusFilter === "all" ? undefined : statusFilter,
+      overdue: overdueOnly || undefined,
+    }),
+  );
   const { data: user } = useQuery(trpc.auth.me.queryOptions());
   const canEdit = user?.subscriptionActive ?? false;
+
+  const isOverdue = (inv: { dueDate?: Date | string | null; status: string }) => {
+    if (!inv.dueDate || inv.status === "paid") return false;
+    const due = new Date(inv.dueDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return due < today;
+  };
 
   if (isLoading) {
     return (
@@ -58,6 +83,33 @@ export default function InvoicesListPage() {
         )}
       </div>
 
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs font-medium text-slate-500">Status:</span>
+        {(["all", "unpaid", "partial", "paid"] as const).map((s) => (
+          <button
+            key={s}
+            type="button"
+            onClick={() => setStatusFilter(s)}
+            className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+              statusFilter === s
+                ? "bg-slate-900 text-white"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+            }`}
+          >
+            {s === "all" ? "All" : s.charAt(0).toUpperCase() + s.slice(1)}
+          </button>
+        ))}
+        <label className="ml-2 flex items-center gap-1.5">
+          <input
+            type="checkbox"
+            checked={overdueOnly}
+            onChange={(e) => setOverdueOnly(e.target.checked)}
+            className="rounded border-slate-300"
+          />
+          <span className="text-xs text-slate-600">Overdue only</span>
+        </label>
+      </div>
+
       <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -76,6 +128,9 @@ export default function InvoicesListPage() {
                   Date
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Due
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                   Status
                 </th>
                 <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -86,8 +141,8 @@ export default function InvoicesListPage() {
             <tbody>
               {!data?.items.length ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
-                    No invoices yet
+                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
+                    No invoices found
                   </td>
                 </tr>
               ) : (
@@ -113,18 +168,30 @@ export default function InvoicesListPage() {
                     <td className="px-4 py-3 text-gray-600">
                       {format(new Date(inv.invoiceDate), "dd MMM yyyy")}
                     </td>
+                    <td className="px-4 py-3 text-gray-600">
+                      {inv.dueDate
+                        ? format(new Date(inv.dueDate), "dd MMM yyyy")
+                        : "—"}
+                    </td>
                     <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex rounded px-2 py-0.5 text-xs font-medium ${
-                          inv.status === "paid"
-                            ? "bg-green-100 text-green-800"
-                            : inv.status === "partial"
-                              ? "bg-amber-100 text-amber-800"
-                              : "bg-gray-100 text-gray-700"
-                        }`}
-                      >
-                        {inv.status}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span
+                          className={`inline-flex rounded px-2 py-0.5 text-xs font-medium ${
+                            inv.status === "paid"
+                              ? "bg-green-100 text-green-800"
+                              : inv.status === "partial"
+                                ? "bg-amber-100 text-amber-800"
+                                : "bg-gray-100 text-gray-700"
+                          }`}
+                        >
+                          {inv.status}
+                        </span>
+                        {isOverdue(inv) && (
+                          <span className="inline-flex rounded bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
+                            Overdue
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-right">
                       <Link

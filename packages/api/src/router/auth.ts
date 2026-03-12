@@ -34,6 +34,7 @@ export const authRouter = createTRPCRouter({
             companyName: companyTable.name,
             planStatus: companyTable.planStatus,
             validTill: companyTable.validTill,
+            role: userTable.role,
           })
           .from(userTable)
           .innerJoin(companyTable, eq(userTable.companyId, companyTable.id))
@@ -66,6 +67,7 @@ export const authRouter = createTRPCRouter({
             subscriptionActive:
               u.planStatus === "active" &&
               (!u.validTill || u.validTill >= new Date()),
+            role: u.role ?? "admin",
           },
         };
       }
@@ -80,6 +82,7 @@ export const authRouter = createTRPCRouter({
           companyName: companyTable.name,
           planStatus: companyTable.planStatus,
           validTill: companyTable.validTill,
+          role: userTable.role,
         })
         .from(userTable)
         .innerJoin(companyTable, eq(userTable.companyId, companyTable.id))
@@ -118,6 +121,7 @@ export const authRouter = createTRPCRouter({
           subscriptionActive:
             u.planStatus === "active" &&
             (!u.validTill || u.validTill >= new Date()),
+          role: u.role ?? "admin",
         },
       };
     }),

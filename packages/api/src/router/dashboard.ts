@@ -1,5 +1,5 @@
 import { startOfMonth } from "date-fns";
-import { eq, and, gte, ne, desc, sql } from "drizzle-orm";
+import { eq, and, gte, ne, desc, lt, sql, inArray } from "drizzle-orm";
 import { invoice as invoiceTable, payment as paymentTable, customer as customerTable } from "@billing-system/db";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
@@ -8,6 +8,8 @@ export const dashboardRouter = createTRPCRouter({
     const companyId = ctx.user.companyId;
     const now = new Date();
     const monthStart = startOfMonth(now);
+    const startOfToday = new Date(now);
+    startOfToday.setHours(0, 0, 0, 0);
 
     const [invoiceStats] = await ctx.db
       .select({
@@ -50,6 +52,47 @@ export const dashboardRouter = createTRPCRouter({
         ),
       );
 
+    const overdueInvoices = await ctx.db
+      .select({
+        id: invoiceTable.id,
+        invoiceNumber: invoiceTable.invoiceNumber,
+        totalAmount: invoiceTable.totalAmount,
+        dueDate: invoiceTable.dueDate,
+        customerName: customerTable.name,
+      })
+      .from(invoiceTable)
+      .innerJoin(customerTable, eq(invoiceTable.customerId, customerTable.id))
+      .where(
+        and(
+          eq(invoiceTable.companyId, companyId),
+          sql`${invoiceTable.dueDate} IS NOT NULL`,
+          lt(invoiceTable.dueDate!, startOfToday),
+          ne(invoiceTable.status, "paid"),
+        ),
+      )
+      .orderBy(invoiceTable.dueDate)
+      .limit(5);
+
+    const overdueIds = overdueInvoices.map((o) => o.id);
+    let overdueAmount = 0;
+    if (overdueIds.length > 0) {
+      const paymentsByInvoice = await ctx.db
+        .select({
+          invoiceId: paymentTable.invoiceId,
+          total: sql<string>`coalesce(sum(${paymentTable.amount})::text, '0')`,
+        })
+        .from(paymentTable)
+        .where(inArray(paymentTable.invoiceId, overdueIds))
+        .groupBy(paymentTable.invoiceId);
+      const paidPerInvoice = new Map(
+        paymentsByInvoice.map((p) => [p.invoiceId, Number(p.total)]),
+      );
+      overdueAmount = overdueInvoices.reduce(
+        (sum, inv) => sum + Math.max(0, Number(inv.totalAmount) - (paidPerInvoice.get(inv.id) ?? 0)),
+        0,
+      );
+    }
+
     const totalSales = Number(invoiceStats?.totalAmount ?? 0);
     const invoiceCount = invoiceStats?.count ?? 0;
     const totalReceived = Number(totalPaymentsThisMonth?.total ?? 0);
@@ -60,8 +103,16 @@ export const dashboardRouter = createTRPCRouter({
       invoiceCount,
       totalReceived,
       pendingAmount,
+      overdueAmount,
       recentInvoices: recentInvoices.map((i) => ({
         ...i,
+        customer: { name: i.customerName },
+      })),
+      topOverdueInvoices: overdueInvoices.map((i) => ({
+        id: i.id,
+        invoiceNumber: i.invoiceNumber,
+        totalAmount: i.totalAmount,
+        dueDate: i.dueDate,
         customer: { name: i.customerName },
       })),
     };

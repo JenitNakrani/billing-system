@@ -51,15 +51,24 @@ export default function DashboardPage() {
     { label: "Invoices (this month)", value: data.invoiceCount },
     { label: "Received (this month)", value: `₹${data.totalReceived.toLocaleString("en-IN")}` },
     { label: "Pending", value: `₹${data.pendingAmount.toLocaleString("en-IN")}` },
+    {
+      label: "Overdue",
+      value: `₹${(data.overdueAmount ?? 0).toLocaleString("en-IN")}`,
+      highlight: (data.overdueAmount ?? 0) > 0,
+    },
   ];
 
   return (
     <div className="space-y-8">
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {cards.map((c) => (
           <motion.div
             key={c.label}
-            className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+            className={`rounded-xl border p-4 shadow-sm ${
+              (c as { highlight?: boolean }).highlight
+                ? "border-red-200 bg-red-50/50"
+                : "border-slate-200 bg-white"
+            }`}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.25, delay: 0.05 }}
@@ -67,12 +76,85 @@ export default function DashboardPage() {
             <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
               {c.label}
             </p>
-            <p className="mt-2 text-2xl font-semibold text-slate-900">
+            <p
+              className={`mt-2 text-2xl font-semibold ${
+                (c as { highlight?: boolean }).highlight
+                  ? "text-red-700"
+                  : "text-slate-900"
+              }`}
+            >
               {c.value}
             </p>
           </motion.div>
         ))}
       </div>
+
+      {(data.topOverdueInvoices?.length ?? 0) > 0 && (
+        <div className="rounded-xl border border-red-200 bg-red-50/30 shadow-sm">
+          <div className="flex items-center justify-between border-b border-red-200 px-4 py-3">
+            <h2 className="text-sm font-semibold text-slate-900">
+              Overdue invoices
+            </h2>
+            <Link
+              href="/dashboard/invoices?overdue=1"
+              className="text-xs font-medium text-red-700 hover:underline"
+            >
+              View all
+            </Link>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-red-200/50 bg-red-100/30">
+                  <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
+                    Invoice
+                  </th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
+                    Customer
+                  </th>
+                  <th className="px-4 py-2 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">
+                    Amount
+                  </th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">
+                    Due date
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.topOverdueInvoices!.map((inv) => (
+                  <motion.tr
+                    key={inv.id}
+                    className="border-b border-red-100/50 hover:bg-red-100/20"
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <td className="px-4 py-2">
+                      <Link
+                        href={`/dashboard/invoices/${inv.id}`}
+                        className="font-medium text-slate-900 hover:underline"
+                      >
+                        {inv.invoiceNumber}
+                      </Link>
+                    </td>
+                    <td className="px-4 py-2 text-slate-700">
+                      {inv.customer?.name ?? "—"}
+                    </td>
+                    <td className="px-4 py-2 text-right font-medium">
+                      ₹{Number(inv.totalAmount).toLocaleString("en-IN")}
+                    </td>
+                    <td className="px-4 py-2 text-slate-600">
+                      {inv.dueDate
+                        ? format(new Date(inv.dueDate), "dd MMM yyyy")
+                        : "—"}
+                    </td>
+                  </motion.tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
         <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">

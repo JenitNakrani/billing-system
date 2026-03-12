@@ -6,6 +6,8 @@ import {
   timestamp,
   decimal,
   boolean,
+  integer,
+  unique,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -26,6 +28,8 @@ export const company = pgTable("Company", {
   email: varchar("email"),
   planStatus: varchar("plan_status").notNull().default("active"),
   validTill: timestamp("valid_till"),
+  invoicePrefix: varchar("invoice_prefix").default("INV-"),
+  invoiceNextNumber: integer("invoice_next_number").notNull().default(1),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -71,13 +75,16 @@ export const product = pgTable("Product", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-export const invoice = pgTable("Invoice", {
-  id: idColumn(),
-  companyId: varchar("company_id").notNull().references(() => company.id, { onDelete: "cascade" }),
-  invoiceNumber: varchar("invoice_number").notNull().unique(),
-  customerId: varchar("customer_id").notNull().references(() => customer.id, { onDelete: "restrict" }),
-  invoiceDate: timestamp("invoice_date").notNull(),
-  status: varchar("status").notNull().default("unpaid"),
+export const invoice = pgTable(
+  "Invoice",
+  {
+    id: idColumn(),
+    companyId: varchar("company_id").notNull().references(() => company.id, { onDelete: "cascade" }),
+    invoiceNumber: varchar("invoice_number").notNull(),
+    customerId: varchar("customer_id").notNull().references(() => customer.id, { onDelete: "restrict" }),
+    invoiceDate: timestamp("invoice_date").notNull(),
+    dueDate: timestamp("due_date"),
+    status: varchar("status").notNull().default("unpaid"),
   subtotal: decimal("subtotal", { precision: 12, scale: 2 }).notNull(),
   discountAmount: decimal("discount_amount", { precision: 12, scale: 2 }).notNull().default("0"),
   taxAmount: decimal("tax_amount", { precision: 12, scale: 2 }).notNull(),
@@ -85,7 +92,9 @@ export const invoice = pgTable("Invoice", {
   notes: text("notes"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
-});
+},
+  (t) => ({ companyInvoice: unique().on(t.companyId, t.invoiceNumber) })
+);
 
 export const invoiceItem = pgTable("InvoiceItem", {
   id: idColumn(),

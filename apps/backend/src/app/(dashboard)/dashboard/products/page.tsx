@@ -116,6 +116,7 @@ export default function ProductsPage() {
   };
 
   const canEdit = user?.subscriptionActive ?? false;
+  const isAdmin = user?.role === "admin";
 
   return (
     <div className="space-y-6">
@@ -238,16 +239,18 @@ export default function ProductsPage() {
                           >
                             Edit
                           </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (confirm("Delete this product?"))
-                                deleteMutation.mutate({ id: p.id });
-                            }}
-                            className="ml-3 text-red-600 hover:underline"
-                          >
-                            Delete
-                          </button>
+                          {isAdmin && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (confirm("Delete this product? This cannot be undone."))
+                                  deleteMutation.mutate({ id: p.id });
+                              }}
+                              className="ml-3 text-red-600 hover:underline"
+                            >
+                              Delete
+                            </button>
+                          )}
                         </td>
                       )}
                     </motion.tr>

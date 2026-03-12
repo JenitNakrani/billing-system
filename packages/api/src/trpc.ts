@@ -15,6 +15,8 @@ export type SessionUser = {
   planStatus: string;
   validTill: Date | null;
   subscriptionActive: boolean;
+  /** "admin" | "staff" – admin can access Settings and delete entities */
+  role: string;
 };
 
 export const createTRPCContext = async (opts: { headers: Headers }) => {
@@ -36,6 +38,7 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
             companyName: companyTable.name,
             planStatus: companyTable.planStatus,
             validTill: companyTable.validTill,
+            role: userTable.role,
           })
           .from(userTable)
           .innerJoin(companyTable, eq(userTable.companyId, companyTable.id))
@@ -55,6 +58,7 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
             planStatus: dbUser.planStatus,
             validTill: dbUser.validTill,
             subscriptionActive,
+            role: dbUser.role ?? "admin",
           };
         }
       }
@@ -101,6 +105,17 @@ export const subscriptionProcedure = protectedProcedure.use(({ ctx, next }) => {
     throw new TRPCError({
       code: "FORBIDDEN",
       message: "Subscription expired. Please renew to continue.",
+    });
+  }
+  return next({ ctx });
+});
+
+/** Admin-only: Settings, delete customers/products, void invoice. Staff can create/edit data but not change company or delete. */
+export const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
+  if (ctx.user.role !== "admin") {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Admin access required.",
     });
   }
   return next({ ctx });

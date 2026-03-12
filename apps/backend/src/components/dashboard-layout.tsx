@@ -8,17 +8,19 @@ import {
   Users,
   Package,
   FileText,
+  BarChart3,
   Settings,
   LogOut,
 } from "lucide-react";
 import { useTRPC } from "~/trpc/react";
 
-const nav = [
+const navItems: { href: string; label: string; icon: typeof LayoutDashboard; adminOnly?: boolean }[] = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { href: "/dashboard/customers", label: "Customers", icon: Users },
   { href: "/dashboard/products", label: "Products", icon: Package },
   { href: "/dashboard/invoices", label: "Invoices", icon: FileText },
-  { href: "/dashboard/settings", label: "Settings", icon: Settings },
+  { href: "/dashboard/reports", label: "Reports", icon: BarChart3 },
+  { href: "/dashboard/settings", label: "Settings", icon: Settings, adminOnly: true },
 ];
 
 function isActive(pathname: string, href: string) {
@@ -43,10 +45,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
     router.refresh();
   };
 
+  const visibleNav = navItems.filter((n) => !n.adminOnly || user?.role === "admin");
   const activeNav =
-    [...nav].reverse().find(
+    [...visibleNav].reverse().find(
       (n) => pathname === n.href || pathname.startsWith(n.href + "/"),
-    ) ?? nav[0];
+    ) ?? visibleNav[0];
 
   const initials =
     user?.name
@@ -78,13 +81,15 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               Main
             </p>
             <div className="space-y-1">
-              {nav.map((item) => {
-                const Icon = item.icon;
-                const active = isActive(pathname, item.href);
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
+              {navItems
+                .filter((item) => !item.adminOnly || user?.role === "admin")
+                .map((item) => {
+                  const Icon = item.icon;
+                  const active = isActive(pathname, item.href);
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
                     className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-colors ${
                       active
                         ? "bg-slate-900 text-slate-50 shadow-sm"
@@ -94,8 +99,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
                     <Icon className="h-4 w-4" />
                     <span>{item.label}</span>
                   </Link>
-                );
-              })}
+                  );
+                })}
             </div>
           </div>
         </nav>
@@ -109,6 +114,11 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               <p className="truncate text-[11px] text-slate-500">
                 {user?.email}
               </p>
+              {user?.role && (
+                <p className="mt-0.5 truncate text-[10px] font-medium uppercase tracking-wide text-slate-400">
+                  {user.role === "admin" ? "Admin" : "Staff"}
+                </p>
+              )}
             </div>
             <div className="ml-2 flex h-7 w-7 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold text-white">
               {initials}

@@ -3,8 +3,9 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "~/trpc/react";
+import { AnimatePresence, motion } from "framer-motion";
 
 type LineItem = {
   productId: string;
@@ -16,9 +17,21 @@ type LineItem = {
 
 export default function NewInvoicePage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const trpc = useTRPC();
   const { data: customers } = useQuery(trpc.customers.list.queryOptions({ limit: 200 }));
   const { data: products } = useQuery(trpc.products.list.queryOptions({ limit: 200 }));
+  const [newCustomerModal, setNewCustomerModal] = useState(false);
+  const [newCustomerForm, setNewCustomerForm] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    address: "",
+    city: "",
+    state: "",
+    pincode: "",
+    gstin: "",
+  });
   const createMutation = useMutation({
     ...trpc.invoices.create.mutationOptions({
       onSuccess: (inv) => {
@@ -26,11 +39,32 @@ export default function NewInvoicePage() {
       },
     }),
   });
+  const createCustomerMutation = useMutation({
+    ...trpc.customers.create.mutationOptions({
+      onSuccess: (data) => {
+        void queryClient.invalidateQueries({ queryKey: trpc.customers.pathKey() });
+        setCustomerId(data.id);
+        setNewCustomerModal(false);
+        setNewCustomerForm({
+          name: "",
+          phone: "",
+          email: "",
+          address: "",
+          city: "",
+          state: "",
+          pincode: "",
+          gstin: "",
+        });
+      },
+    }),
+  });
 
   const [customerId, setCustomerId] = useState("");
-  const [invoiceDate, setInvoiceDate] = useState(
-    new Date().toISOString().slice(0, 10),
-  );
+  const today = new Date().toISOString().slice(0, 10);
+  const defaultDue = new Date();
+  defaultDue.setDate(defaultDue.getDate() + 30);
+  const [invoiceDate, setInvoiceDate] = useState(today);
+  const [dueDate, setDueDate] = useState(defaultDue.toISOString().slice(0, 10));
   const [discountAmount, setDiscountAmount] = useState(0);
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<LineItem[]>([]);
@@ -78,6 +112,7 @@ export default function NewInvoicePage() {
     createMutation.mutate({
       customerId,
       invoiceDate: new Date(invoiceDate),
+      dueDate: dueDate ? new Date(dueDate) : undefined,
       items: items.map((line) => {
         const p = productMap.get(line.productId);
         return {
@@ -111,19 +146,28 @@ export default function NewInvoicePage() {
             <label className="mb-1 block text-sm font-medium text-gray-700">
               Customer *
             </label>
-            <select
-              value={customerId}
-              onChange={(e) => setCustomerId(e.target.value)}
-              required
-              className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
-            >
-              <option value="">Select customer</option>
-              {customers?.items?.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
+            <div className="flex gap-2">
+              <select
+                value={customerId}
+                onChange={(e) => setCustomerId(e.target.value)}
+                required
+                className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
+              >
+                <option value="">Select customer</option>
+                {customers?.items?.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => setNewCustomerModal(true)}
+                className="rounded border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                + New
+              </button>
+            </div>
           </div>
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">
@@ -132,7 +176,24 @@ export default function NewInvoicePage() {
             <input
               type="date"
               value={invoiceDate}
-              onChange={(e) => setInvoiceDate(e.target.value)}
+              onChange={(e) => {
+                setInvoiceDate(e.target.value);
+                const d = new Date(e.target.value);
+                d.setDate(d.getDate() + 30);
+                setDueDate(d.toISOString().slice(0, 10));
+              }}
+              className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-sm font-medium text-gray-700">
+              Due date
+            </label>
+            <input
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              min={invoiceDate}
               className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
             />
           </div>
@@ -314,6 +375,134 @@ export default function NewInvoicePage() {
           </button>
         </div>
       </form>
+
+      <AnimatePresence>
+        {newCustomerModal && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setNewCustomerModal(false)}
+          >
+            <motion.div
+              className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-lg"
+              initial={{ opacity: 0, scale: 0.95, y: 8 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 8 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="mb-4 text-lg font-semibold text-slate-900">
+                Add customer
+              </h2>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!newCustomerForm.name.trim()) return;
+                  createCustomerMutation.mutate({
+                    name: newCustomerForm.name.trim(),
+                    phone: newCustomerForm.phone || undefined,
+                    email: newCustomerForm.email || undefined,
+                    address: newCustomerForm.address || undefined,
+                    city: newCustomerForm.city || undefined,
+                    state: newCustomerForm.state || undefined,
+                    pincode: newCustomerForm.pincode || undefined,
+                    gstin: newCustomerForm.gstin || undefined,
+                  });
+                }}
+                className="space-y-3"
+              >
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">Name *</label>
+                  <input
+                    value={newCustomerForm.name}
+                    onChange={(e) => setNewCustomerForm((f) => ({ ...f, name: e.target.value }))}
+                    required
+                    className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">Phone</label>
+                  <input
+                    value={newCustomerForm.phone}
+                    onChange={(e) => setNewCustomerForm((f) => ({ ...f, phone: e.target.value }))}
+                    className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">Email</label>
+                  <input
+                    type="email"
+                    value={newCustomerForm.email}
+                    onChange={(e) => setNewCustomerForm((f) => ({ ...f, email: e.target.value }))}
+                    className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">Address</label>
+                  <input
+                    value={newCustomerForm.address}
+                    onChange={(e) => setNewCustomerForm((f) => ({ ...f, address: e.target.value }))}
+                    className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700">City</label>
+                    <input
+                      value={newCustomerForm.city}
+                      onChange={(e) => setNewCustomerForm((f) => ({ ...f, city: e.target.value }))}
+                      className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700">State</label>
+                    <input
+                      value={newCustomerForm.state}
+                      onChange={(e) => setNewCustomerForm((f) => ({ ...f, state: e.target.value }))}
+                      className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700">Pincode</label>
+                    <input
+                      value={newCustomerForm.pincode}
+                      onChange={(e) => setNewCustomerForm((f) => ({ ...f, pincode: e.target.value }))}
+                      className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700">GSTIN</label>
+                    <input
+                      value={newCustomerForm.gstin}
+                      onChange={(e) => setNewCustomerForm((f) => ({ ...f, gstin: e.target.value }))}
+                      className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setNewCustomerModal(false)}
+                    className="rounded px-4 py-2 text-sm text-gray-600 hover:bg-gray-100"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={createCustomerMutation.isPending || !newCustomerForm.name.trim()}
+                    className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+                  >
+                    {createCustomerMutation.isPending ? "Adding…" : "Add customer"}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

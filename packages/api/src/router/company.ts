@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { company as companyTable } from "@billing-system/db";
-import { createTRPCRouter, protectedProcedure, subscriptionProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure, adminProcedure } from "../trpc";
 
 export const companyRouter = createTRPCRouter({
   get: protectedProcedure.query(async ({ ctx }) => {
@@ -14,7 +14,7 @@ export const companyRouter = createTRPCRouter({
     return company;
   }),
 
-  update: subscriptionProcedure
+  update: adminProcedure
     .input(
       z.object({
         name: z.string().min(1).optional(),
@@ -23,10 +23,13 @@ export const companyRouter = createTRPCRouter({
         city: z.string().optional(),
         state: z.string().optional(),
         pincode: z.string().optional(),
+        country: z.string().optional(),
         gstin: z.string().optional(),
         pan: z.string().optional(),
         phone: z.string().optional(),
         email: z.string().email().optional(),
+        invoicePrefix: z.string().max(20).optional(),
+        invoiceNextNumber: z.number().int().min(1).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
