@@ -164,124 +164,193 @@ export default function InvoicePrintPage() {
         </Link>
       </div>
 
-      <div className="mx-auto max-w-3xl bg-white p-8 pt-16 print:pt-8">
+      <div className="mx-auto max-w-3xl bg-white p-8 pt-16 print:pt-8 border border-slate-400">
         {/* Letterhead */}
-        <div className="mb-8 border-b border-slate-200 pb-6">
-          <h1 className="text-2xl font-bold text-slate-900">
-            {company?.name ?? "Company"}
-          </h1>
-          {(company?.addressLine1 || company?.city || company?.state) && (
-            <p className="mt-1 text-sm text-slate-600">
-              {[company?.addressLine1, company?.addressLine2, company?.city, company?.state, company?.pincode]
-                .filter(Boolean)
-                .join(", ")}
-            </p>
-          )}
-          {(company?.gstin || company?.phone || company?.email) && (
-            <p className="mt-1 text-xs text-slate-500">
-              {[company?.gstin && `GSTIN: ${company.gstin}`, company?.phone, company?.email]
-                .filter(Boolean)
-                .join(" • ")}
-            </p>
-          )}
-        </div>
-
-        <div className="mb-6 flex justify-between">
+        <div className="mb-2 flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-slate-900">TAX INVOICE</h2>
-            <p className="mt-1 text-sm text-slate-600">
-              Invoice no. <span className="font-medium">{invoice.invoiceNumber}</span>
-            </p>
-            <p className="text-sm text-slate-600">
-              Date: {format(new Date(invoice.invoiceDate), "dd MMM yyyy")}
-            </p>
-            {invoice.dueDate && (
-              <p className="text-sm text-slate-600">
-                Due: {format(new Date(invoice.dueDate), "dd MMM yyyy")}
-              </p>
+            {company?.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={company.logoUrl}
+                alt={company.name ?? "Logo"}
+                className="h-20 w-auto object-contain"
+              />
+            ) : (
+              <h1 className="text-3xl font-bold">{company?.name ?? "Company"}</h1>
             )}
           </div>
-          <div className="text-right">
-            <p className="text-xs font-medium uppercase text-slate-500">Bill to</p>
-            <p className="font-medium text-slate-900">{invoice.customer?.name ?? "—"}</p>
-            {invoice.customer?.address && (
-              <p className="mt-1 text-sm text-slate-600">{invoice.customer.address}</p>
-            )}
-            {invoice.customer?.city && (
-              <p className="text-sm text-slate-600">
-                {[invoice.customer.city, invoice.customer.state, invoice.customer.pincode]
+          <div className="text-right text-xs">
+            <p className="font-semibold text-sm">{company?.name ?? "Company"}</p>
+            {(company?.addressLine1 || company?.city || company?.state) && (
+              <p>
+                {[company?.addressLine1, company?.addressLine2, company?.city, company?.state, company?.pincode]
                   .filter(Boolean)
                   .join(", ")}
               </p>
             )}
-            {invoice.customer?.gstin && (
-              <p className="mt-1 text-xs text-slate-500">GSTIN: {invoice.customer.gstin}</p>
+            {(company?.phone || company?.email) && (
+              <p>
+                {company?.phone && <>Phone: {company.phone}</>}
+                {company?.phone && company?.email && "  "}
+                {company?.email && <>Email: {company.email}</>}
+              </p>
             )}
           </div>
         </div>
 
-        <table className="w-full border-collapse text-sm">
+        <hr className="my-2 border-t border-slate-400" />
+
+        {/* Title */}
+        <p className="mb-2 text-center text-sm font-semibold underline">
+          {company?.invoiceTitle || "Invoice"}
+        </p>
+
+        {/* Bill to + Invoice meta block, table-style */}
+        <table className="mb-4 w-full text-xs">
+          <tbody>
+            <tr>
+              <td className="align-top">
+                <div className="space-y-0.5">
+                  <p>
+                    <span className="font-semibold">Bill To:&nbsp;</span>
+                    {invoice.customer?.name ?? "—"}
+                  </p>
+                  {invoice.customer?.address && (
+                    <p>
+                      <span className="font-semibold">Address:&nbsp;</span>
+                      {invoice.customer.address}
+                    </p>
+                  )}
+                  {invoice.customer?.city && (
+                    <p>
+                      {[invoice.customer.city, invoice.customer.state, invoice.customer.pincode]
+                        .filter(Boolean)
+                        .join(", ")}
+                    </p>
+                  )}
+                  {(invoice.customer?.phone || invoice.customer?.email) && (
+                    <p>
+                      {invoice.customer?.phone && <>Phone: {invoice.customer.phone}</>}
+                      {invoice.customer?.phone && invoice.customer?.email && "  "}
+                      {invoice.customer?.email && <>Email: {invoice.customer.email}</>}
+                    </p>
+                  )}
+                </div>
+              </td>
+              <td className="align-top">
+                <div className="space-y-0.5 text-right">
+                  <p>
+                    <span className="font-semibold">Invoice No:&nbsp;</span>
+                    {invoice.invoiceNumber}
+                  </p>
+                  <p>
+                    <span className="font-semibold">Invoice Date:&nbsp;</span>
+                    {format(new Date(invoice.invoiceDate), "dd MMM yyyy")}
+                  </p>
+                  <p>
+                    <span className="font-semibold">Terms:&nbsp;</span>
+                    30 days
+                  </p>
+                  {invoice.dueDate && (
+                    <p>
+                      <span className="font-semibold">Due Date:&nbsp;</span>
+                      {format(new Date(invoice.dueDate), "dd MMM yyyy")}
+                    </p>
+                  )}
+                  <p>
+                    <span className="font-semibold">Courier:&nbsp;</span>
+                    Pickup
+                  </p>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <table className="w-full border border-slate-400 border-collapse text-sm">
           <thead>
-            <tr className="border-b-2 border-slate-200 bg-slate-50">
-              <th className="py-2 text-left font-semibold text-slate-700">#</th>
-              <th className="py-2 text-left font-semibold text-slate-700">Description</th>
-              <th className="py-2 text-right font-semibold text-slate-700">Qty</th>
-              <th className="py-2 text-right font-semibold text-slate-700">Rate</th>
-              <th className="py-2 text-right font-semibold text-slate-700">GST %</th>
-              <th className="py-2 text-right font-semibold text-slate-700">Taxable</th>
-              <th className="py-2 text-right font-semibold text-slate-700">GST Amt</th>
-              <th className="py-2 text-right font-semibold text-slate-700">Amount</th>
+            <tr className="bg-slate-100">
+              <th className="border border-slate-400 px-2 py-1 text-left text-xs font-semibold uppercase text-slate-700">
+                Sr. No
+              </th>
+              <th className="border border-slate-400 px-2 py-1 text-left text-xs font-semibold uppercase text-slate-700">
+                Goods Description
+              </th>
+              <th className="border border-slate-400 px-2 py-1 text-right text-xs font-semibold uppercase text-slate-700">
+                Qty
+              </th>
+              <th className="border border-slate-400 px-2 py-1 text-right text-xs font-semibold uppercase text-slate-700">
+                Rate
+              </th>
+              <th className="border border-slate-400 px-2 py-1 text-right text-xs font-semibold uppercase text-slate-700">
+                GST %
+              </th>
+              <th className="border border-slate-400 px-2 py-1 text-right text-xs font-semibold uppercase text-slate-700">
+                Taxable
+              </th>
+              <th className="border border-slate-400 px-2 py-1 text-right text-xs font-semibold uppercase text-slate-700">
+                GST Amt
+              </th>
+              <th className="border border-slate-400 px-2 py-1 text-right text-xs font-semibold uppercase text-slate-700">
+                Amount
+              </th>
             </tr>
           </thead>
           <tbody>
             {computedItems.map((line, idx) => (
-              <tr key={idx} className="border-b border-slate-100">
-                <td className="py-2 text-slate-600">{idx + 1}</td>
-                <td className="py-2 text-slate-900">{line.name}</td>
-                <td className="py-2 text-right text-slate-600">
+              <tr key={idx}>
+                <td className="border border-slate-400 px-2 py-1 text-slate-600">
+                  {idx + 1}
+                </td>
+                <td className="border border-slate-400 px-2 py-1 text-slate-900">
+                  {line.name}
+                </td>
+                <td className="border border-slate-400 px-2 py-1 text-right text-slate-600">
                   {line.qty.toLocaleString("en-IN")}
                 </td>
-                <td className="py-2 text-right text-slate-600">
+                <td className="border border-slate-400 px-2 py-1 text-right text-slate-600">
                   ₹{line.rate.toLocaleString("en-IN")}
                 </td>
-                <td className="py-2 text-right text-slate-600">{line.gstRate}%</td>
-                <td className="py-2 text-right text-slate-600">
+                <td className="border border-slate-400 px-2 py-1 text-right text-slate-600">
+                  {line.gstRate}%
+                </td>
+                <td className="border border-slate-400 px-2 py-1 text-right text-slate-600">
                   ₹{line.taxable.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
                 </td>
-                <td className="py-2 text-right text-slate-600">
+                <td className="border border-slate-400 px-2 py-1 text-right text-slate-600">
                   ₹{line.gstAmount.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
                 </td>
-                <td className="py-2 text-right font-medium">
+                <td className="border border-slate-400 px-2 py-1 text-right font-medium">
                   ₹{line.gross.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
                 </td>
               </tr>
             ))}
-            <tr className="border-t border-slate-200 bg-slate-50">
-              <td className="py-2 text-right text-xs font-semibold text-slate-600" colSpan={5}>
-                Total
+            <tr className="bg-slate-50">
+              <td
+                className="border border-slate-400 px-2 py-1 text-right text-xs font-semibold text-slate-600"
+                colSpan={5}
+              >
+                TOTAL
               </td>
-              <td className="py-2 text-right text-sm font-semibold text-slate-900">
+              <td className="border border-slate-400 px-2 py-1 text-right text-sm font-semibold text-slate-900">
                 ₹{taxableTotal.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
               </td>
-              <td className="py-2 text-right text-sm font-semibold text-slate-900">
+              <td className="border border-slate-400 px-2 py-1 text-right text-sm font-semibold text-slate-900">
                 ₹{gstTotal.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
               </td>
-              <td className="py-2 text-right text-sm font-semibold text-slate-900">
+              <td className="border border-slate-400 px-2 py-1 text-right text-sm font-semibold text-slate-900">
                 ₹{totalAmount.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
               </td>
             </tr>
           </tbody>
         </table>
 
-        <div className="mt-4 flex justify-between border-t border-slate-200 pt-4">
-          <div className="max-w-sm text-sm text-slate-700">
-            <p className="text-xs font-semibold uppercase text-slate-500">
-              Amount in words
-            </p>
-            <p className="mt-1">
-              {amountInWords} only
-            </p>
-          </div>
+        <p className="mt-2 text-xs font-medium text-slate-700">
+          Amount in words: {amountInWords} only
+        </p>
+
+        <div className="mt-4 flex justify-between border-t border-slate-400 pt-4">
+          <div className="max-w-sm text-sm text-slate-700" />
           <div className="w-56 space-y-1 text-right text-sm">
             {Number(invoice.discountAmount) > 0 && (
               <p className="text-slate-600">
@@ -303,24 +372,69 @@ export default function InvoicePrintPage() {
             )}
           </div>
         </div>
+        <div className="mt-6 grid gap-6 border-t border-slate-400 pt-4 text-xs">
+          {invoice.notes && (
+            <div className="mb-4">
+              <p className="text-xs font-semibold uppercase text-slate-600">Notes</p>
+              <p className="mt-1 whitespace-pre-line text-slate-700">
+                {invoice.notes}
+              </p>
+            </div>
+          )}
+        </div>
 
-        <div className="mt-8 grid gap-6 border-t border-slate-200 pt-4 sm:grid-cols-2">
-          <div>
-            {invoice.notes && (
-              <>
-                <p className="text-xs font-medium uppercase text-slate-500">Notes</p>
-                <p className="mt-1 text-sm text-slate-700 whitespace-pre-line">
-                  {invoice.notes}
-                </p>
-              </>
+        {(company?.footerDisclaimer || company?.footerDeclaration) && (
+          <div className="mt-6 space-y-3 border-t border-slate-400 pt-4 text-xs">
+            {company.footerDisclaimer && (
+              <div>
+                <p className="font-semibold uppercase text-slate-600">Disclaimer</p>
+                <p className="mt-1 text-slate-700">{company.footerDisclaimer}</p>
+              </div>
+            )}
+            {company.footerDeclaration && (
+              <div>
+                <p className="font-semibold uppercase text-slate-600">Declaration</p>
+                <p className="mt-1 text-slate-700">{company.footerDeclaration}</p>
+              </div>
             )}
           </div>
-          <div className="text-right text-sm text-slate-700">
-            <p className="mb-10">For {company?.name ?? "Company"}</p>
-            <p className="mt-10 inline-block border-t border-slate-400 px-8 pt-1 text-xs uppercase tracking-wide">
+        )}
+
+        {company?.bankName && (
+          <div className="mt-6 border-t border-slate-400 pt-4 text-xs">
+            <p className="mb-2 font-semibold uppercase text-slate-600">Bank Details</p>
+            <table className="w-full text-xs">
+              <tbody>
+                <tr>
+                  <td className="font-semibold w-32">Name of the Bank :</td>
+                  <td className="w-1/2">{company.bankName}</td>
+                  <td className="font-semibold w-32">Account No :</td>
+                  <td>{company.bankAccountNumber ?? ""}</td>
+                </tr>
+                <tr>
+                  <td className="font-semibold">Bank Add. :</td>
+                  <td>{company.bankBranch ?? ""}</td>
+                  <td className="font-semibold">IFSC :</td>
+                  <td>{company.bankIfsc ?? ""}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <div className="mt-8 flex justify-between text-xs">
+          <div>
+            <p>For {company?.name ?? "Company"}</p>
+          </div>
+          <div className="text-right">
+            <p className="border-t border-slate-400 px-6 pt-1 uppercase tracking-wide">
               Authorised Signatory
             </p>
           </div>
+        </div>
+
+        <div className="mt-4 text-center text-[10px] text-slate-500">
+          1 / 1
         </div>
       </div>
     </div>

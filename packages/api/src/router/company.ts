@@ -28,8 +28,18 @@ export const companyRouter = createTRPCRouter({
         pan: z.string().optional(),
         phone: z.string().optional(),
         email: z.string().email().optional(),
+        logoUrl: z.string().url().optional(),
+        invoiceTitle: z.string().max(100).optional(),
         invoicePrefix: z.string().max(20).optional(),
         invoiceNextNumber: z.number().int().min(1).optional(),
+        bankName: z.string().optional(),
+        bankBranch: z.string().optional(),
+        bankAccountNumber: z.string().optional(),
+        bankIfsc: z.string().optional(),
+        bankSwift: z.string().optional(),
+        bankBeneficiary: z.string().optional(),
+        footerDisclaimer: z.string().optional(),
+        footerDeclaration: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {

@@ -29,8 +29,18 @@ export default function SettingsPage() {
     pan: "",
     phone: "",
     email: "",
+    logoUrl: "",
+    invoiceTitle: "",
     invoicePrefix: "",
     invoiceNextNumber: 1,
+    bankName: "",
+    bankBranch: "",
+    bankAccountNumber: "",
+    bankIfsc: "",
+    bankSwift: "",
+    bankBeneficiary: "",
+    footerDisclaimer: "",
+    footerDeclaration: "",
   });
   const updateMutation = useMutation({
     ...trpc.company.update.mutationOptions({
@@ -52,8 +62,18 @@ export default function SettingsPage() {
         pan: company.pan ?? "",
         phone: company.phone ?? "",
         email: company.email ?? "",
+        logoUrl: company.logoUrl ?? "",
+        invoiceTitle: company.invoiceTitle ?? "Invoice",
         invoicePrefix: company.invoicePrefix ?? "INV-",
         invoiceNextNumber: company.invoiceNextNumber ?? 1,
+        bankName: company.bankName ?? "",
+        bankBranch: company.bankBranch ?? "",
+        bankAccountNumber: company.bankAccountNumber ?? "",
+        bankIfsc: company.bankIfsc ?? "",
+        bankSwift: company.bankSwift ?? "",
+        bankBeneficiary: company.bankBeneficiary ?? "",
+        footerDisclaimer: company.footerDisclaimer ?? "",
+        footerDeclaration: company.footerDeclaration ?? "",
       });
     }
   }, [company]);
@@ -64,7 +84,10 @@ export default function SettingsPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!canEdit) return;
-    updateMutation.mutate(form);
+    updateMutation.mutate({
+      ...form,
+      logoUrl: form.logoUrl.trim() || undefined,
+    });
   };
 
   if (!userPending && user && user.role !== "admin") return null;
@@ -219,6 +242,41 @@ export default function SettingsPage() {
           </div>
           <div className="border-t border-slate-200 pt-4">
             <h3 className="mb-2 text-sm font-semibold text-slate-800">
+              Branding
+            </h3>
+            <div className="space-y-3">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Logo URL
+                </label>
+                <input
+                  type="url"
+                  value={form.logoUrl}
+                  onChange={(e) => setForm((f) => ({ ...f, logoUrl: e.target.value }))}
+                  placeholder="https://…/logo.png"
+                  disabled={!canEdit}
+                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100 disabled:text-gray-500"
+                />
+                <p className="mt-1 text-xs text-slate-500">
+                  Public URL of your logo image. It will appear on the top-left of the invoice.
+                </p>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Invoice title
+                </label>
+                <input
+                  value={form.invoiceTitle}
+                  onChange={(e) => setForm((f) => ({ ...f, invoiceTitle: e.target.value }))}
+                  placeholder="Invoice, Tax Invoice, Proforma Invoice…"
+                  disabled={!canEdit}
+                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100 disabled:text-gray-500"
+                />
+              </div>
+            </div>
+          </div>
+          <div className="border-t border-slate-200 pt-4">
+            <h3 className="mb-2 text-sm font-semibold text-slate-800">
               Invoice numbering
             </h3>
             <p className="mb-3 text-xs text-slate-500">
@@ -271,6 +329,122 @@ export default function SettingsPage() {
                 <p className="mt-1 text-xs text-slate-500">
                   The next created invoice will use this running number.
                 </p>
+              </div>
+            </div>
+          </div>
+          <div className="border-t border-slate-200 pt-4">
+            <h3 className="mb-2 text-sm font-semibold text-slate-800">
+              Bank details
+            </h3>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Bank name
+                </label>
+                <input
+                  value={form.bankName}
+                  onChange={(e) => setForm((f) => ({ ...f, bankName: e.target.value }))}
+                  disabled={!canEdit}
+                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100 disabled:text-gray-500"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Branch
+                </label>
+                <input
+                  value={form.bankBranch}
+                  onChange={(e) => setForm((f) => ({ ...f, bankBranch: e.target.value }))}
+                  disabled={!canEdit}
+                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100 disabled:text-gray-500"
+                />
+              </div>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Account number
+                </label>
+                <input
+                  value={form.bankAccountNumber}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, bankAccountNumber: e.target.value }))
+                  }
+                  disabled={!canEdit}
+                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100 disabled:text-gray-500"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Beneficiary name
+                </label>
+                <input
+                  value={form.bankBeneficiary}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, bankBeneficiary: e.target.value }))
+                  }
+                  disabled={!canEdit}
+                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100 disabled:text-gray-500"
+                />
+              </div>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  IFSC
+                </label>
+                <input
+                  value={form.bankIfsc}
+                  onChange={(e) => setForm((f) => ({ ...f, bankIfsc: e.target.value }))}
+                  disabled={!canEdit}
+                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100 disabled:text-gray-500"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  SWIFT
+                </label>
+                <input
+                  value={form.bankSwift}
+                  onChange={(e) => setForm((f) => ({ ...f, bankSwift: e.target.value }))}
+                  disabled={!canEdit}
+                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100 disabled:text-gray-500"
+                />
+              </div>
+            </div>
+          </div>
+          <div className="border-t border-slate-200 pt-4">
+            <h3 className="mb-2 text-sm font-semibold text-slate-800">
+              Footer text
+            </h3>
+            <div className="space-y-3">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Disclaimer
+                </label>
+                <textarea
+                  value={form.footerDisclaimer}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, footerDisclaimer: e.target.value }))
+                  }
+                  rows={3}
+                  disabled={!canEdit}
+                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100 disabled:text-gray-500"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Declaration
+                </label>
+                <textarea
+                  value={form.footerDeclaration}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, footerDeclaration: e.target.value }))
+                  }
+                  rows={3}
+                  disabled={!canEdit}
+                  className="w-full rounded border border-gray-300 px-3 py-2 text-sm disabled:bg-gray-100 disabled:text-gray-500"
+                />
               </div>
             </div>
           </div>
