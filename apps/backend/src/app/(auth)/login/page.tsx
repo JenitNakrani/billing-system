@@ -15,9 +15,11 @@ export default function LoginPage() {
 
   const loginMutation = useMutation({
     ...trpc.auth.login.mutationOptions({
-      onSuccess: (data) => {
+      onSuccess: async (data) => {
         document.cookie = `billing_session=${data.token}; path=/; max-age=604800; SameSite=Lax`;
-        void queryClient.invalidateQueries({ queryKey: trpc.auth.me.queryOptions().queryKey });
+        const key = trpc.auth.me.queryOptions().queryKey;
+        queryClient.invalidateQueries({ queryKey: key });
+        await queryClient.refetchQueries({ queryKey: key });
         router.push("/dashboard");
         router.refresh();
       },
