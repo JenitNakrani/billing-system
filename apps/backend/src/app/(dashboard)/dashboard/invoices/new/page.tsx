@@ -22,6 +22,7 @@ export default function NewInvoicePage() {
   const { data: customers } = useQuery(trpc.customers.list.queryOptions({ limit: 200 }));
   const { data: products } = useQuery(trpc.products.list.queryOptions({ limit: 200 }));
   const [newCustomerModal, setNewCustomerModal] = useState(false);
+  const [newProductModal, setNewProductModal] = useState(false);
   const [newCustomerForm, setNewCustomerForm] = useState({
     name: "",
     phone: "",
@@ -31,6 +32,14 @@ export default function NewInvoicePage() {
     state: "",
     pincode: "",
     gstin: "",
+  });
+  const [newProductForm, setNewProductForm] = useState({
+    name: "",
+    sku: "",
+    unit: "pcs",
+    price: "",
+    gstRate: "18",
+    hsnCode: "",
   });
   const createMutation = useMutation({
     ...trpc.invoices.create.mutationOptions({
@@ -54,6 +63,32 @@ export default function NewInvoicePage() {
           state: "",
           pincode: "",
           gstin: "",
+        });
+      },
+    }),
+  });
+  const createProductMutation = useMutation({
+    ...trpc.products.create.mutationOptions({
+      onSuccess: (product) => {
+        void queryClient.invalidateQueries({ queryKey: trpc.products.pathKey() });
+        // Add a new line item for the created product
+        setItems((prev) => [
+          ...prev,
+          {
+            productId: product.id,
+            quantity: 1,
+            unitPrice: Number(product.price),
+            gstRate: Number(product.gstRate),
+          },
+        ]);
+        setNewProductModal(false);
+        setNewProductForm({
+          name: "",
+          sku: "",
+          unit: "pcs",
+          price: "",
+          gstRate: "18",
+          hsnCode: "",
         });
       },
     }),
@@ -143,7 +178,7 @@ export default function NewInvoicePage() {
       <form onSubmit={handleSubmit} className="space-y-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
+            <label className="mb-1 block text-sm font-medium text-gray-600">
               Customer *
             </label>
             <div className="flex gap-2">
@@ -151,7 +186,7 @@ export default function NewInvoicePage() {
                 value={customerId}
                 onChange={(e) => setCustomerId(e.target.value)}
                 required
-                className="flex-1 rounded border border-gray-300 px-3 py-2 text-sm"
+                className="flex-1 rounded border border-gray-200 px-3 py-2 text-sm"
               >
                 <option value="">Select customer</option>
                 {customers?.items?.map((c) => (
@@ -163,14 +198,14 @@ export default function NewInvoicePage() {
               <button
                 type="button"
                 onClick={() => setNewCustomerModal(true)}
-                className="rounded border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                className="rounded border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50-hover"
               >
                 + New
               </button>
             </div>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
+            <label className="mb-1 block text-sm font-medium text-gray-600">
               Invoice date *
             </label>
             <input
@@ -182,11 +217,11 @@ export default function NewInvoicePage() {
                 d.setDate(d.getDate() + 30);
                 setDueDate(d.toISOString().slice(0, 10));
               }}
-              className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+              className="w-full rounded border border-gray-200 px-3 py-2 text-sm"
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
+            <label className="mb-1 block text-sm font-medium text-gray-600">
               Due date
             </label>
             <input
@@ -194,24 +229,33 @@ export default function NewInvoicePage() {
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
               min={invoiceDate}
-              className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+              className="w-full rounded border border-gray-200 px-3 py-2 text-sm"
             />
           </div>
         </div>
 
         <div>
           <div className="mb-2 flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-700">Items</span>
-            <button
-              type="button"
-              onClick={addLine}
-              className="text-sm text-blue-600 hover:underline"
-            >
-              + Add item
-            </button>
+            <span className="text-sm font-medium text-gray-600">Items</span>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setNewProductModal(true)}
+                className="text-xs text-gray-500 underline-offset-2 hover:text-gray-600 hover:underline"
+              >
+                + New product
+              </button>
+              <button
+                type="button"
+                onClick={addLine}
+                className="text-sm text-blue-600 underline-offset-2 hover:underline"
+              >
+                + Add item
+              </button>
+            </div>
           </div>
           {items.length === 0 ? (
-            <p className="rounded border border-dashed border-gray-300 py-6 text-center text-sm text-gray-500">
+            <p className="rounded border border-dashed border-gray-200 py-6 text-center text-sm text-gray-500">
               Add at least one item
             </p>
           ) : (
@@ -243,7 +287,7 @@ export default function NewInvoicePage() {
                             gstRate: prod ? Number(prod.gstRate) : undefined,
                           });
                         }}
-                        className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
+                        className="w-full rounded border border-gray-200 px-2 py-1.5 text-sm"
                       >
                         {products?.items?.map((p) => (
                           <option key={p.id} value={p.id}>
@@ -265,7 +309,7 @@ export default function NewInvoicePage() {
                             quantity: Number(e.target.value) || 1,
                           })
                         }
-                        className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
+                        className="w-full rounded border border-gray-200 px-2 py-1.5 text-sm"
                       />
                     </div>
                     <div className="w-24">
@@ -282,7 +326,7 @@ export default function NewInvoicePage() {
                             unitPrice: Number(e.target.value) || 0,
                           })
                         }
-                        className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
+                        className="w-full rounded border border-gray-200 px-2 py-1.5 text-sm"
                       />
                     </div>
                     <div className="w-16">
@@ -300,7 +344,7 @@ export default function NewInvoicePage() {
                             gstRate: Number(e.target.value) || 0,
                           })
                         }
-                        className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm"
+                        className="w-full rounded border border-gray-200 px-2 py-1.5 text-sm"
                       />
                     </div>
                     <div className="w-24 text-right text-sm font-medium">
@@ -323,7 +367,7 @@ export default function NewInvoicePage() {
 
         <div className="flex gap-4 border-t border-gray-200 pt-4">
           <div className="flex-1">
-            <label className="mb-1 block text-sm font-medium text-gray-700">
+            <label className="mb-1 block text-sm font-medium text-gray-600">
               Discount amount
             </label>
             <input
@@ -332,7 +376,7 @@ export default function NewInvoicePage() {
               min={0}
               value={discountAmount}
               onChange={(e) => setDiscountAmount(Number(e.target.value) || 0)}
-              className="w-full max-w-[120px] rounded border border-gray-300 px-3 py-2 text-sm"
+              className="w-full max-w-[120px] rounded border border-gray-200 px-3 py-2 text-sm"
             />
           </div>
           <div className="text-right">
@@ -344,14 +388,14 @@ export default function NewInvoicePage() {
         </div>
 
         <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">
+          <label className="mb-1 block text-sm font-medium text-gray-600">
             Notes
           </label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={2}
-            className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+            className="w-full rounded border border-gray-200 px-3 py-2 text-sm"
           />
         </div>
 
@@ -369,7 +413,7 @@ export default function NewInvoicePage() {
               !customerId ||
               items.length === 0
             }
-            className="rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-900-hover disabled:opacity-50"
           >
             {createMutation.isPending ? "Creating..." : "Create invoice"}
           </button>
@@ -379,20 +423,26 @@ export default function NewInvoicePage() {
       <AnimatePresence>
         {newCustomerModal && (
           <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setNewCustomerModal(false)}
           >
             <motion.div
-              className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-lg"
-              initial={{ opacity: 0, scale: 0.95, y: 8 }}
+              className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-6 shadow-lg"
+              initial={{ opacity: 0, scale: 0.96, y: 12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 8 }}
+              exit={{ opacity: 0, scale: 0.96, y: 8 }}
               onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="new-customer-modal-title"
             >
-              <h2 className="mb-4 text-lg font-semibold text-slate-900">
+              <h2
+                id="new-customer-modal-title"
+                className="mb-4 text-lg font-semibold text-slate-900"
+              >
                 Add customer
               </h2>
               <form
@@ -413,72 +463,72 @@ export default function NewInvoicePage() {
                 className="space-y-3"
               >
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Name *</label>
+                  <label className="mb-1 block text-sm font-medium text-gray-600">Name *</label>
                   <input
                     value={newCustomerForm.name}
                     onChange={(e) => setNewCustomerForm((f) => ({ ...f, name: e.target.value }))}
                     required
-                    className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                    className="w-full rounded border border-gray-200 px-3 py-2 text-sm"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Phone</label>
+                  <label className="mb-1 block text-sm font-medium text-gray-600">Phone</label>
                   <input
                     value={newCustomerForm.phone}
                     onChange={(e) => setNewCustomerForm((f) => ({ ...f, phone: e.target.value }))}
-                    className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                    className="w-full rounded border border-gray-200 px-3 py-2 text-sm"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Email</label>
+                  <label className="mb-1 block text-sm font-medium text-gray-600">Email</label>
                   <input
                     type="email"
                     value={newCustomerForm.email}
                     onChange={(e) => setNewCustomerForm((f) => ({ ...f, email: e.target.value }))}
-                    className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                    className="w-full rounded border border-gray-200 px-3 py-2 text-sm"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Address</label>
+                  <label className="mb-1 block text-sm font-medium text-gray-600">Address</label>
                   <input
                     value={newCustomerForm.address}
                     onChange={(e) => setNewCustomerForm((f) => ({ ...f, address: e.target.value }))}
-                    className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                    className="w-full rounded border border-gray-200 px-3 py-2 text-sm"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">City</label>
+                    <label className="mb-1 block text-sm font-medium text-gray-600">City</label>
                     <input
                       value={newCustomerForm.city}
                       onChange={(e) => setNewCustomerForm((f) => ({ ...f, city: e.target.value }))}
-                      className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                      className="w-full rounded border border-gray-200 px-3 py-2 text-sm"
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">State</label>
+                    <label className="mb-1 block text-sm font-medium text-gray-600">State</label>
                     <input
                       value={newCustomerForm.state}
                       onChange={(e) => setNewCustomerForm((f) => ({ ...f, state: e.target.value }))}
-                      className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                      className="w-full rounded border border-gray-200 px-3 py-2 text-sm"
                     />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">Pincode</label>
+                    <label className="mb-1 block text-sm font-medium text-gray-600">Pincode</label>
                     <input
                       value={newCustomerForm.pincode}
                       onChange={(e) => setNewCustomerForm((f) => ({ ...f, pincode: e.target.value }))}
-                      className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                      className="w-full rounded border border-gray-200 px-3 py-2 text-sm"
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">GSTIN</label>
+                    <label className="mb-1 block text-sm font-medium text-gray-600">GSTIN</label>
                     <input
                       value={newCustomerForm.gstin}
                       onChange={(e) => setNewCustomerForm((f) => ({ ...f, gstin: e.target.value }))}
-                      className="w-full rounded border border-gray-300 px-3 py-2 text-sm"
+                      className="w-full rounded border border-gray-200 px-3 py-2 text-sm"
                     />
                   </div>
                 </div>
@@ -493,9 +543,162 @@ export default function NewInvoicePage() {
                   <button
                     type="submit"
                     disabled={createCustomerMutation.isPending || !newCustomerForm.name.trim()}
-                    className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+                    className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-900-hover disabled:opacity-50"
                   >
                     {createCustomerMutation.isPending ? "Adding…" : "Add customer"}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {newProductModal && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setNewProductModal(false)}
+          >
+            <motion.div
+              className="w-full max-w-md rounded-xl border border-gray-200 bg-white p-6 shadow-lg"
+              initial={{ opacity: 0, scale: 0.96, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 8 }}
+              onClick={(e) => e.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="new-product-modal-title"
+            >
+              <h2
+                id="new-product-modal-title"
+                className="mb-4 text-lg font-semibold text-slate-900"
+              >
+                Add product
+              </h2>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!newProductForm.name.trim()) return;
+                  const price = Number.parseFloat(newProductForm.price);
+                  const gstRate = Number.parseFloat(newProductForm.gstRate);
+                  if (Number.isNaN(price) || price < 0 || Number.isNaN(gstRate) || gstRate < 0 || gstRate > 100) {
+                    return;
+                  }
+                  createProductMutation.mutate({
+                    name: newProductForm.name.trim(),
+                    sku: newProductForm.sku || undefined,
+                    unit: newProductForm.unit || undefined,
+                    price,
+                    gstRate,
+                    hsnCode: newProductForm.hsnCode || undefined,
+                  });
+                }}
+                className="space-y-3"
+              >
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-600">
+                    Name *
+                  </label>
+                  <input
+                    value={newProductForm.name}
+                    onChange={(e) =>
+                      setNewProductForm((f) => ({ ...f, name: e.target.value }))
+                    }
+                    required
+                    className="w-full rounded border border-gray-200 px-3 py-2 text-sm"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-600">
+                      SKU
+                    </label>
+                    <input
+                      value={newProductForm.sku}
+                      onChange={(e) =>
+                        setNewProductForm((f) => ({ ...f, sku: e.target.value }))
+                      }
+                      className="w-full rounded border border-gray-200 px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-600">
+                      Unit
+                    </label>
+                    <input
+                      value={newProductForm.unit}
+                      onChange={(e) =>
+                        setNewProductForm((f) => ({ ...f, unit: e.target.value }))
+                      }
+                      className="w-full rounded border border-gray-200 px-3 py-2 text-sm"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-600">
+                      Price *
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min={0}
+                      value={newProductForm.price}
+                      onChange={(e) =>
+                        setNewProductForm((f) => ({ ...f, price: e.target.value }))
+                      }
+                      required
+                      className="w-full rounded border border-gray-200 px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-600">
+                      GST % *
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      step="0.01"
+                      value={newProductForm.gstRate}
+                      onChange={(e) =>
+                        setNewProductForm((f) => ({ ...f, gstRate: e.target.value }))
+                      }
+                      required
+                      className="w-full rounded border border-gray-200 px-3 py-2 text-sm"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-600">
+                    HSN code
+                  </label>
+                  <input
+                    value={newProductForm.hsnCode}
+                    onChange={(e) =>
+                      setNewProductForm((f) => ({ ...f, hsnCode: e.target.value }))
+                    }
+                    className="w-full rounded border border-gray-200 px-3 py-2 text-sm"
+                  />
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setNewProductModal(false)}
+                    className="rounded px-4 py-2 text-sm text-gray-600 hover:bg-gray-100"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={createProductMutation.isPending}
+                    className="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-900-hover disabled:opacity-50"
+                  >
+                    {createProductMutation.isPending ? "Adding…" : "Add product"}
                   </button>
                 </div>
               </form>

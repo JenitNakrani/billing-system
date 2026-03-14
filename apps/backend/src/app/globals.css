@@ -6,6 +6,49 @@ body {
   @apply bg-gray-50 text-gray-900 antialiased;
 }
 
+/* App design tokens */
+@layer components {
+  .app-card {
+    @apply rounded-xl border border-slate-200 bg-white shadow-sm;
+  }
+
+  .app-card-header {
+    @apply flex items-center justify-between border-b border-slate-200 px-4 py-3;
+  }
+
+  .app-section-muted {
+    @apply rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700;
+  }
+
+  .app-btn-primary {
+    @apply inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .app-btn-secondary {
+    @apply inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .app-btn-ghost {
+    @apply inline-flex items-center justify-center rounded-lg px-3 py-1.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .app-badge-success {
+    @apply inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700 ring-1 ring-emerald-100;
+  }
+
+  .app-badge-warning {
+    @apply inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-amber-100;
+  }
+
+  .app-badge-muted {
+    @apply inline-flex items-center rounded-full bg-slate-50 px-2.5 py-0.5 text-xs font-medium text-slate-700 ring-1 ring-slate-200;
+  }
+
+  .app-alert-warning {
+    @apply rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800;
+  }
+}
+
 /* Invoice print view: hide everything except the invoice content when printing */
 @media print {
   .no-print {

@@ -152,19 +152,19 @@ export default function InvoicePrintPage() {
         <button
           type="button"
           onClick={handlePrint}
-          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow hover:bg-slate-800"
+          className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow hover:bg-slate-900-hover"
         >
           Print / Save as PDF
         </button>
         <Link
           href={`/dashboard/invoices/${id}`}
-          className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          className="rounded-lg border border-slate-400 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100"
         >
           Back to invoice
         </Link>
       </div>
 
-      <div className="mx-auto max-w-3xl bg-white p-8 pt-16 print:pt-8 border border-slate-400">
+      <div className="mx-auto max-w-3xl bg-white p-8 pt-16 text-[13px] leading-relaxed print:pt-8 border border-slate-400">
         {/* Letterhead */}
         <div className="mb-2 flex items-center justify-between">
           <div>
@@ -270,28 +270,28 @@ export default function InvoicePrintPage() {
         <table className="w-full border border-slate-400 border-collapse text-sm">
           <thead>
             <tr className="bg-slate-100">
-              <th className="border border-slate-400 px-2 py-1 text-left text-xs font-semibold uppercase text-slate-700">
+              <th className="border border-slate-400 px-2 py-1 text-left text-xs font-semibold uppercase text-slate-600">
                 Sr. No
               </th>
-              <th className="border border-slate-400 px-2 py-1 text-left text-xs font-semibold uppercase text-slate-700">
+              <th className="border border-slate-400 px-2 py-1 text-left text-xs font-semibold uppercase text-slate-600">
                 Goods Description
               </th>
-              <th className="border border-slate-400 px-2 py-1 text-right text-xs font-semibold uppercase text-slate-700">
+              <th className="border border-slate-400 px-2 py-1 text-right text-xs font-semibold uppercase text-slate-600">
                 Qty
               </th>
-              <th className="border border-slate-400 px-2 py-1 text-right text-xs font-semibold uppercase text-slate-700">
+              <th className="border border-slate-400 px-2 py-1 text-right text-xs font-semibold uppercase text-slate-600">
                 Rate
               </th>
-              <th className="border border-slate-400 px-2 py-1 text-right text-xs font-semibold uppercase text-slate-700">
+              <th className="border border-slate-400 px-2 py-1 text-right text-xs font-semibold uppercase text-slate-600">
                 GST %
               </th>
-              <th className="border border-slate-400 px-2 py-1 text-right text-xs font-semibold uppercase text-slate-700">
+              <th className="border border-slate-400 px-2 py-1 text-right text-xs font-semibold uppercase text-slate-600">
                 Taxable
               </th>
-              <th className="border border-slate-400 px-2 py-1 text-right text-xs font-semibold uppercase text-slate-700">
+              <th className="border border-slate-400 px-2 py-1 text-right text-xs font-semibold uppercase text-slate-600">
                 GST Amt
               </th>
-              <th className="border border-slate-400 px-2 py-1 text-right text-xs font-semibold uppercase text-slate-700">
+              <th className="border border-slate-400 px-2 py-1 text-right text-xs font-semibold uppercase text-slate-600">
                 Amount
               </th>
             </tr>
@@ -325,7 +325,7 @@ export default function InvoicePrintPage() {
                 </td>
               </tr>
             ))}
-            <tr className="bg-slate-50">
+            <tr className="bg-slate-100">
               <td
                 className="border border-slate-400 px-2 py-1 text-right text-xs font-semibold text-slate-600"
                 colSpan={5}
@@ -345,12 +345,12 @@ export default function InvoicePrintPage() {
           </tbody>
         </table>
 
-        <p className="mt-2 text-xs font-medium text-slate-700">
+        <p className="mt-2 text-xs font-medium text-slate-600">
           Amount in words: {amountInWords} only
         </p>
 
         <div className="mt-4 flex justify-between border-t border-slate-400 pt-4">
-          <div className="max-w-sm text-sm text-slate-700" />
+          <div className="max-w-sm text-sm text-slate-600" />
           <div className="w-56 space-y-1 text-right text-sm">
             {Number(invoice.discountAmount) > 0 && (
               <p className="text-slate-600">
@@ -366,7 +366,7 @@ export default function InvoicePrintPage() {
               </p>
             )}
             {balance > 0 && (
-              <p className="font-medium text-slate-700">
+              <p className="font-medium text-slate-600">
                 Balance: ₹{balance.toLocaleString("en-IN")}
               </p>
             )}
@@ -376,7 +376,7 @@ export default function InvoicePrintPage() {
           {invoice.notes && (
             <div className="mb-4">
               <p className="text-xs font-semibold uppercase text-slate-600">Notes</p>
-              <p className="mt-1 whitespace-pre-line text-slate-700">
+              <p className="mt-1 whitespace-pre-line text-slate-600">
                 {invoice.notes}
               </p>
             </div>
@@ -388,13 +388,13 @@ export default function InvoicePrintPage() {
             {company.footerDisclaimer && (
               <div>
                 <p className="font-semibold uppercase text-slate-600">Disclaimer</p>
-                <p className="mt-1 text-slate-700">{company.footerDisclaimer}</p>
+                <p className="mt-1 text-slate-600">{company.footerDisclaimer}</p>
               </div>
             )}
             {company.footerDeclaration && (
               <div>
                 <p className="font-semibold uppercase text-slate-600">Declaration</p>
-                <p className="mt-1 text-slate-700">{company.footerDeclaration}</p>
+                <p className="mt-1 text-slate-600">{company.footerDeclaration}</p>
               </div>
             )}
           </div>

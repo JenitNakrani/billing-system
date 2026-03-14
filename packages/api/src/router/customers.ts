@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { eq, and, desc, or, like, lt } from "drizzle-orm";
+import { eq, and, desc, or, sql, lt } from "drizzle-orm";
 import { customer as customerTable } from "@billing-system/db";
 import { createTRPCRouter, protectedProcedure, subscriptionProcedure, adminProcedure } from "../trpc";
 
@@ -19,11 +19,12 @@ export const customersRouter = createTRPCRouter({
       const limit = input?.limit ?? 50;
       const conditions = [eq(customerTable.companyId, ctx.user.companyId)];
       if (input?.search) {
+        const term = `%${input.search.trim()}%`;
         conditions.push(
           or(
-            like(customerTable.name, `%${input.search}%`),
-            like(customerTable.email, `%${input.search}%`),
-            like(customerTable.phone, `%${input.search}%`),
+            sql`${customerTable.name} ilike ${term}`,
+            sql`${customerTable.email} ilike ${term}`,
+            sql`${customerTable.phone} ilike ${term}`,
           )!,
         );
       }

@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { eq, and, desc, lt, ne, sql } from "drizzle-orm";
+import { eq, and, desc, lt, ne, or, sql } from "drizzle-orm";
 import {
   invoice as invoiceTable,
   invoiceItem as invoiceItemTable,
@@ -24,6 +24,7 @@ export const invoicesRouter = createTRPCRouter({
     .input(
       z
         .object({
+          search: z.string().min(1).max(100).optional(),
           limit: z.number().min(1).max(500).default(50),
           cursor: z.string().optional(),
           status: z.enum(["paid", "partial", "unpaid"]).optional(),
@@ -35,6 +36,15 @@ export const invoicesRouter = createTRPCRouter({
       const limit = input?.limit ?? 50;
       const conditions = [eq(invoiceTable.companyId, ctx.user.companyId)];
       if (input?.cursor) conditions.push(lt(invoiceTable.id, input.cursor));
+      if (input?.search?.trim()) {
+        const term = `%${input.search.trim()}%`;
+        conditions.push(
+          or(
+            sql`${invoiceTable.invoiceNumber}::text ilike ${term}`,
+            sql`${customerTable.name} ilike ${term}`,
+          )!,
+        );
+      }
       if (input?.status) conditions.push(eq(invoiceTable.status, input.status));
       if (input?.overdue === true) {
         const startOfToday = new Date();

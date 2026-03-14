@@ -101,4 +101,45 @@ export const reportsRouter = createTRPCRouter({
         totalRevenue: Number(r.totalRevenue),
       }));
     }),
+
+  agingByCustomer: protectedProcedure.query(async ({ ctx }) => {
+    const companyId = ctx.user.companyId;
+
+    const rows = await ctx.db
+      .select({
+        customerId: invoiceTable.customerId,
+        customerName: customerTable.name,
+        bucket0_30: sql<string>`coalesce(sum(case when (current_date - (coalesce(${invoiceTable.dueDate}, ${invoiceTable.invoiceDate})::date)) between 0 and 30 then ${invoiceTable.totalAmount} else 0 end)::text, '0')`,
+        bucket31_60: sql<string>`coalesce(sum(case when (current_date - (coalesce(${invoiceTable.dueDate}, ${invoiceTable.invoiceDate})::date)) between 31 and 60 then ${invoiceTable.totalAmount} else 0 end)::text, '0')`,
+        bucket61_90: sql<string>`coalesce(sum(case when (current_date - (coalesce(${invoiceTable.dueDate}, ${invoiceTable.invoiceDate})::date)) between 61 and 90 then ${invoiceTable.totalAmount} else 0 end)::text, '0')`,
+        bucket90_plus: sql<string>`coalesce(sum(case when (current_date - (coalesce(${invoiceTable.dueDate}, ${invoiceTable.invoiceDate})::date)) > 90 then ${invoiceTable.totalAmount} else 0 end)::text, '0')`,
+      })
+      .from(invoiceTable)
+      .innerJoin(customerTable, eq(invoiceTable.customerId, customerTable.id))
+      .where(
+        and(
+          eq(invoiceTable.companyId, companyId),
+          sql`${invoiceTable.status} <> 'paid'`,
+          sql`${invoiceTable.status} <> 'cancelled'`,
+        ),
+      )
+      .groupBy(invoiceTable.customerId, customerTable.name)
+      .orderBy(desc(sql`sum(${invoiceTable.totalAmount})::numeric`));
+
+    return rows.map((r) => {
+      const b0 = Number(r.bucket0_30);
+      const b1 = Number(r.bucket31_60);
+      const b2 = Number(r.bucket61_90);
+      const b3 = Number(r.bucket90_plus);
+      return {
+        customerId: r.customerId,
+        customerName: r.customerName,
+        bucket0_30: b0,
+        bucket31_60: b1,
+        bucket61_90: b2,
+        bucket90_plus: b3,
+        total: b0 + b1 + b2 + b3,
+      };
+    });
+  }),
 });

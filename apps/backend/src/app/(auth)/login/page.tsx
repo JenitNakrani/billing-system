@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "~/trpc/react";
 
 export default function LoginPage() {
   const router = useRouter();
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -16,6 +17,7 @@ export default function LoginPage() {
     ...trpc.auth.login.mutationOptions({
       onSuccess: (data) => {
         document.cookie = `billing_session=${data.token}; path=/; max-age=604800; SameSite=Lax`;
+        void queryClient.invalidateQueries({ queryKey: trpc.auth.me.queryOptions().queryKey });
         router.push("/dashboard");
         router.refresh();
       },
@@ -89,7 +91,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loginMutation.isPending}
-              className="mt-2 w-full rounded-lg bg-slate-900 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-slate-800 disabled:opacity-60"
+              className="mt-2 w-full app-btn-primary justify-center py-2.5"
             >
               {loginMutation.isPending ? "Signing in..." : "Sign in"}
             </button>
